@@ -1,0 +1,7 @@
+{
+  "name": "ref-gallery",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build-config.mjs"
+  }
+}

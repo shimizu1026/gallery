@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>REF Gallery — 参考デザインライブラリ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header" id="app-header">
+        <div class="header-top">
+          <h1 class="logo">
+            <a href="#" class="logo-link" id="logo-link">
+              REF Gallery
+              <span class="logo-sub">参考デザインライブラリ</span>
+            </a>
+          </h1>
+        </div>
+        <div class="header-filters" id="header-filters">
+          <div class="header-field">
+            <div class="multi-select" data-filter-key="industry">
+              <button type="button" class="multi-select-trigger">業界</button>
+              <div class="multi-select-panel" id="filter-panel-industry"></div>
+            </div>
+          </div>
+          <div class="header-field">
+            <div class="multi-select" data-filter-key="site_type">
+              <button type="button" class="multi-select-trigger">
+                サイトタイプ
+              </button>
+              <div class="multi-select-panel" id="filter-panel-site_type"></div>
+            </div>
+          </div>
+          <div class="header-field">
+            <div class="multi-select" data-filter-key="color">
+              <button type="button" class="multi-select-trigger">カラー</button>
+              <div class="multi-select-panel" id="filter-panel-color"></div>
+            </div>
+          </div>
+          <div class="header-field">
+            <div class="multi-select" data-filter-key="taste">
+              <button type="button" class="multi-select-trigger">
+                特徴・テイスト
+              </button>
+              <div class="multi-select-panel" id="filter-panel-taste"></div>
+            </div>
+          </div>
+          <div class="header-field">
+            <div class="multi-select" data-filter-key="motion">
+              <button type="button" class="multi-select-trigger">
+                動き・技術
+              </button>
+              <div class="multi-select-panel" id="filter-panel-motion"></div>
+            </div>
+          </div>
+          <div class="header-field">
+            <div class="multi-select" data-filter-key="font_type">
+              <button type="button" class="multi-select-trigger">
+                フォント種別
+              </button>
+              <div class="multi-select-panel" id="filter-panel-font_type"></div>
+            </div>
+          </div>
+          <div class="header-field">
+            <div class="multi-select" data-filter-key="font_name">
+              <button type="button" class="multi-select-trigger">
+                フォント名
+              </button>
+              <div class="multi-select-panel" id="filter-panel-font_name"></div>
+            </div>
+          </div>
+          <div class="header-field header-field-search">
+            <input
+              type="text"
+              id="filter-search"
+              placeholder="キーワード検索"
+            />
+          </div>
+        </div>
+      </header>
+
+      <div class="app-body">
+        <aside class="sidebar">
+          <div class="sidebar-categories">
+            <p class="sidebar-label">カテゴリー</p>
+            <nav class="nav" id="category-nav"></nav>
+          </div>
+          <div class="sidebar-category-add">
+            <p class="sidebar-label">新規カテゴリーを追加</p>
+            <div class="category-add">
+              <input
+                type="text"
+                id="custom-category-input"
+                placeholder="カテゴリー名"
+                maxlength="40"
+              />
+              <button
+                type="button"
+                class="btn btn-sm category-add-btn"
+                onclick="addCustomCategory()"
+              >
+                追加
+              </button>
+            </div>
+          </div>
+          <div class="sidebar-footer">
+            <button
+              type="button"
+              class="fab-add"
+              data-view="add"
+              title="新規追加"
+            >
+              <span class="fab-plus">＋</span>
+            </button>
+            <div class="db-status">
+              <div class="db-dot" id="db-dot"></div>
+              <span id="db-status-text">未接続</span>
+            </div>
+            <button type="button" class="nav-btn setup-btn" id="setup-btn">
+              <div class="icon-box"></div>
+              <span class="label">Supabase設定</span>
+            </button>
+          </div>
+        </aside>
+
+        <main class="main">
+          <!-- HOME -->
+          <section class="view active" id="view-home">
+            <p class="count" id="home-count"></p>
+            <div class="gallery-grid" id="home-grid"></div>
+          </section>
+
+          <!-- ADD -->
+          <section class="view" id="view-add">
+            <h2>新規追加</h2>
+            <p class="subtitle">参考サイトを登録・スクリーンショットを保存</p>
+
+            <input type="file" id="file-input" accept="image/*" hidden />
+
+            <div class="add-form" id="add-form">
+              <div class="preview-area" id="preview-area">
+                <div class="preview-choice">
+                  <button
+                    type="button"
+                    class="preview-choice-btn"
+                    onclick="startCapture()"
+                  >
+                    <svg
+                      width="28"
+                      height="28"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    >
+                      <rect x="2" y="3" width="20" height="14" rx="2" />
+                      <path d="M8 21h8M12 17v4" />
+                    </svg>
+                    <span>画面キャプチャ</span>
+                  </button>
+                  <div class="preview-choice-divider"></div>
+                  <button
+                    type="button"
+                    class="preview-choice-btn"
+                    onclick="document.getElementById('file-input').click()"
+                  >
+                    <svg
+                      width="28"
+                      height="28"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    <span>画像アップロード</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="add-url">URL</label>
+                <input
+                  type="url"
+                  id="add-url"
+                  placeholder="https://example.com"
+                />
+              </div>
+              <div class="form-group">
+                <label for="add-title">サイト名</label>
+                <input
+                  type="text"
+                  id="add-title"
+                  placeholder="URLを入れると自動入力されます"
+                />
+              </div>
+              <div class="form-group">
+                <label for="add-industry">業界</label>
+                <select id="add-industry"></select>
+              </div>
+              <div class="form-group">
+                <label for="add-site-type">サイトタイプ</label>
+                <select id="add-site-type"></select>
+              </div>
+              <div class="form-group">
+                <label>カラー</label>
+                <input type="hidden" id="add-color" value="" />
+                <div class="option-group" id="add-color-options"></div>
+              </div>
+              <div class="form-group">
+                <label>特徴・テイスト</label>
+                <input type="hidden" id="add-taste" value="" />
+                <div class="option-group" id="add-taste-options"></div>
+              </div>
+              <div class="form-group">
+                <label>動き・技術</label>
+                <input type="hidden" id="add-motion" value="" />
+                <div class="option-group" id="add-motion-options"></div>
+              </div>
+              <div class="form-group">
+                <label>フォント種別</label>
+                <input type="hidden" id="add-font-type" value="" />
+                <div class="option-group" id="add-font-type-options"></div>
+              </div>
+              <div class="form-group">
+                <label for="add-font-name">フォント名</label>
+                <select id="add-font-name"></select>
+              </div>
+              <div class="form-group">
+                <label for="add-memo">メモ（任意）</label>
+                <textarea
+                  id="add-memo"
+                  placeholder="気づいた点や参考にしたいポイント"
+                ></textarea>
+              </div>
+              <div class="add-form-actions">
+                <button class="btn" type="button" onclick="saveItem()">保存する</button>
+                <button class="btn btn-outline" type="button" onclick="navigate('home')">戻る</button>
+                <button class="btn btn-outline" type="button" onclick="clearAddForm()">入力をクリア</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- DETAIL -->
+          <section class="view" id="view-detail">
+            <div class="detail-header">
+              <div>
+                <h2 id="detail-title"></h2>
+                <p class="subtitle" id="detail-subtitle"></p>
+              </div>
+              <div class="detail-actions">
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="navigate('edit')"
+                >
+                  編集
+                </button>
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="deleteCurrent()"
+                >
+                  削除
+                </button>
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="navigate('home')"
+                >
+                  ホームへ戻る
+                </button>
+              </div>
+            </div>
+            <div class="detail-hero" id="detail-hero"></div>
+            <div class="detail-info" id="detail-info"></div>
+            <h2 id="detail-sections-title">セクション</h2>
+            <div class="section-grid" id="detail-sections"></div>
+          </section>
+
+          <!-- EDIT -->
+          <section class="view" id="view-edit">
+            <h2>編集</h2>
+            <p class="subtitle">メモやタグを後から更新</p>
+            <div class="add-form">
+              <div class="preview-area" id="edit-preview"></div>
+              <div class="form-group">
+                <label for="edit-title">タイトル</label>
+                <input type="text" id="edit-title" />
+              </div>
+              <div class="form-group">
+                <label for="edit-url">URL</label>
+                <input type="url" id="edit-url" />
+              </div>
+              <div class="form-group">
+                <label for="edit-industry">業界</label>
+                <select id="edit-industry"></select>
+              </div>
+              <div class="form-group">
+                <label for="edit-site-type">サイトタイプ</label>
+                <select id="edit-site-type"></select>
+              </div>
+              <div class="form-group">
+                <label>カラー</label>
+                <input type="hidden" id="edit-color" value="" />
+                <div class="option-group" id="edit-color-options"></div>
+              </div>
+              <div class="form-group">
+                <label>特徴・テイスト</label>
+                <input type="hidden" id="edit-taste" value="" />
+                <div class="option-group" id="edit-taste-options"></div>
+              </div>
+              <div class="form-group">
+                <label>動き・技術</label>
+                <input type="hidden" id="edit-motion" value="" />
+                <div class="option-group" id="edit-motion-options"></div>
+              </div>
+              <div class="form-group">
+                <label>フォント種別</label>
+                <input type="hidden" id="edit-font-type" value="" />
+                <div class="option-group" id="edit-font-type-options"></div>
+              </div>
+              <div class="form-group">
+                <label for="edit-font-name">フォント名</label>
+                <select id="edit-font-name"></select>
+              </div>
+              <div class="form-group">
+                <label for="edit-memo">メモ</label>
+                <textarea id="edit-memo"></textarea>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn" onclick="updateItem()">更新する</button>
+                <button class="btn btn-outline" onclick="navigate('detail')">
+                  キャンセル
+                </button>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- Capture Overlay -->
+    <div class="capture-overlay" id="capture-overlay">
+      <div class="capture-toolbar">
+        <p id="capture-hint">REF Gallery のタブで、ドラッグして範囲を選択 → 離すとキャプチャ</p>
+        <div style="display: flex; gap: 8px;">
+          <button
+            class="btn btn-sm btn-outline"
+            style="color: #fff; border-color: #fff; background: transparent;"
+            onclick="confirmCapture()"
+          >
+            確定
+          </button>
+          <button
+            class="btn btn-sm btn-outline"
+            style="color: #fff; border-color: #fff; background: transparent;"
+            onclick="closeCapture()"
+          >
+            閉じる
+          </button>
+        </div>
+      </div>
+      <div class="capture-stage" id="capture-stage">
+        <video id="capture-video" autoplay muted playsinline></video>
+        <img id="capture-image" style="display: none;" alt="" />
+        <div class="selection-box" id="selection-box"></div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="loading-overlay" id="loading">読み込み中…</div>
+
+    <div class="modal-overlay" id="setup-modal">
+      <div class="modal">
+        <h2>Supabase 接続設定</h2>
+        <p class="subtitle">データの保存先として Supabase を使います</p>
+        <div class="form-group">
+          <label for="cfg-url">Project URL</label>
+          <input
+            type="url"
+            id="cfg-url"
+            placeholder="https://xxxxx.supabase.co"
+          />
+        </div>
+        <div class="form-group">
+          <label for="cfg-key">anon public key</label>
+          <input
+            type="text"
+            id="cfg-key"
+            placeholder="eyJhbGciOiJIUzI1NiIs..."
+          />
+        </div>
+        <p style="font-size: 16px; color: #a4a4a4; margin-bottom: 24px;">
+          Supabase ダッシュボード → Settings → API から取得できます。
+          <br />
+          初回は
+          <code>supabase-setup.sql</code>
+          を SQL Editor で実行してください。
+        </p>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn" onclick="saveSupabaseConfig()">接続する</button>
+          <button class="btn btn-outline" onclick="closeSetupModal()">
+            後で
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="assets/js/config.js"></script>
+    <script src="assets/js/app.js"></script>
+  </body>
+</html>
