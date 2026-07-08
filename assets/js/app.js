@@ -530,10 +530,23 @@ function groupItemsBySite(list) {
   });
 }
 
+function isMainVisualSection(section) {
+  return parseMultiValue(section).includes('メインビジュアル');
+}
+
+function getMainVisualItem(item, siteItems = null) {
+  const group = siteItems || getItemsForSameSite(item);
+  const mainVisual = group.find(i => i.image && isMainVisualSection(i.section));
+  if (mainVisual) return mainVisual;
+  const withImage = group.find(i => i.image);
+  if (withImage) return withImage;
+  return item;
+}
+
 function renderCard(group) {
   const item = group.representative || group;
-  const siteItems = group.items || [item];
-  const thumbItem = siteItems.find(i => i.image) || item;
+  const allSiteItems = getItemsForSameSite(item);
+  const thumbItem = getMainVisualItem(item, allSiteItems);
 
   const thumb = thumbItem.image
     ? `<img src="${thumbItem.image}" alt="${item.title}">`
@@ -749,7 +762,7 @@ function renderDetail(id) {
   if (!item) return navigate('home');
 
   const siteItems = getItemsForSameSite(item);
-  const heroItem = siteItems.find(i => i.image) || item;
+  const heroItem = getMainVisualItem(item, siteItems);
 
   document.getElementById('detail-title').textContent = item.title;
   document.getElementById('detail-subtitle').textContent =
