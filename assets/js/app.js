@@ -44,15 +44,23 @@ const MOTION_TYPES = [
   'Parallax', 'Three.js / 3D', 'GSAP', 'Lottie', 'CSS Animation',
   'SVGアニメーション', 'マイクロインタラクション', 'トップボタン'
 ];
-const FONT_TYPES = ['ゴシック', '明朝', '英語', '日本語', 'その他'];
-const JAPANESE_FONTS = [
-  'Noto Sans JP', 'Noto Serif JP', 'M PLUS 1p', 'Zen Kaku Gothic New', 'Shippori Mincho', 'Zen Old Mincho', 'その他'
-];
-const WESTERN_FONTS = [
-  'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins',
-  'Playfair Display', 'Oswald', 'Raleway', 'Source Sans 3'
-];
-const COMMON_FONTS = [...JAPANESE_FONTS, ...WESTERN_FONTS];
+const FONT_TYPES = ['グーグルフォント', 'アドビフォント', 'フリーフォント', 'その他'];
+const FONTS_BY_TYPE = {
+  'グーグルフォント': [
+    'Noto Sans JP', 'Noto Serif JP', 'Roboto', 'Inter', 'Open Sans', 'Lato',
+    'Montserrat', 'Poppins', 'Playfair Display', 'Oswald', 'Raleway',
+    'M PLUS 1p', 'Zen Kaku Gothic New', 'Shippori Mincho', 'Zen Old Mincho', 'Source Sans 3'
+  ],
+  'アドビフォント': [
+    'Source Han Sans', 'Source Han Serif', 'Acumin Pro', 'Minion Pro',
+    'Myriad Pro', 'Kozuka Gothic Pro', 'Kozuka Mincho Pro', 'Adobe Garamond Pro'
+  ],
+  'フリーフォント': [
+    'BIZ UDPGothic', 'BIZ UDPMincho', '源ノ角ゴシック', '源ノ明朝',
+    '游ゴシック', '游明朝', 'Helvetica Neue', 'Arial'
+  ]
+};
+const ALL_LISTED_FONTS = [...new Set(Object.values(FONTS_BY_TYPE).flat())];
 
 let supabaseClient = null;
 let items = [];
@@ -504,7 +512,7 @@ function renderGrid(containerId, list) {
 function getFilterOptions(key) {
   if (key === 'font_name') {
     return [...new Set([
-      ...COMMON_FONTS,
+      ...ALL_LISTED_FONTS,
       ...items.flatMap(i => parseMultiValue(i.font_name))
     ])].sort();
   }
@@ -754,7 +762,7 @@ async function updateItemAsync() {
     taste: document.getElementById('edit-taste').value,
     motion: document.getElementById('edit-motion').value,
     font_type: document.getElementById('edit-font-type').value,
-    font_name: document.getElementById('edit-font-name').value,
+    font_name: getFontNameValue('edit'),
     memo: document.getElementById('edit-memo').value.trim()
   };
 
@@ -837,7 +845,7 @@ function captureAddFormDraft() {
     taste: document.getElementById('add-taste')?.value || '',
     motion: document.getElementById('add-motion')?.value || '',
     font_type: document.getElementById('add-font-type')?.value || '',
-    font_name: document.getElementById('add-font-name')?.value || '',
+    font_name: getFontNameValue('add'),
     memo: document.getElementById('add-memo')?.value || '',
     pendingImage: pendingImage || null,
     addTitleTouched,
@@ -869,11 +877,13 @@ function applyAddFormDraft(d) {
   document.getElementById('add-motion').value = d.motion || '';
   document.getElementById('add-font-type').value = d.font_type || '';
   document.getElementById('add-font-name').value = d.font_name || '';
+  const otherEl = document.getElementById('add-font-name-other');
+  if (otherEl) otherEl.value = '';
   document.getElementById('add-memo').value = d.memo || '';
   addTitleTouched = !!d.addTitleTouched;
   lastAutoTitle = d.lastAutoTitle || '';
   initAddFormPickers();
-  fillFontNameSelect('add-font-name', d.font_name || '');
+  updateFontNameUI('add', d.font_name || '');
   pendingImage = d.pendingImage || null;
   if (pendingImage) setPreview(pendingImage);
   else document.getElementById('preview-area').innerHTML = previewChoiceHTML();
@@ -894,6 +904,11 @@ function resetAddForm() {
   document.getElementById('add-site-type').value = '';
   document.getElementById('add-color').value = '';
   document.getElementById('add-font-name').value = '';
+  const addOtherEl = document.getElementById('add-font-name-other');
+  if (addOtherEl) {
+    addOtherEl.value = '';
+    addOtherEl.hidden = true;
+  }
   document.getElementById('add-memo').value = '';
   lastAutoTitle = '';
   addTitleTouched = false;
@@ -1057,7 +1072,7 @@ async function saveItemAsync() {
       taste: document.getElementById('add-taste').value,
       motion: document.getElementById('add-motion').value,
       font_type: document.getElementById('add-font-type').value,
-      font_name: document.getElementById('add-font-name').value,
+      font_name: getFontNameValue('add'),
       memo: document.getElementById('add-memo').value.trim(),
       image_path: imagePath,
       sections: []
@@ -1241,16 +1256,67 @@ function fillSelect(id, options, placeholder = '選択してください') {
   if ([...el.options].some(o => o.value === current)) el.value = current;
 }
 
-function fillFontNameSelect(id, value) {
+function isOtherFontType(types) {
+  return types.includes('その他');
+}
+
+function getFontsForTypes(types) {
+  const filtered = types.filter(t => t !== 'その他');
+  if (!filtered.length) return ALL_LISTED_FONTS;
+  return [...new Set(filtered.flatMap(t => FONTS_BY_TYPE[t] || []))];
+}
+
+function getFontNameValue(prefix) {
+  const types = parseMultiValue(document.getElementById(`${prefix}-font-type`)?.value || '');
+  if (isOtherFontType(types)) {
+    return document.getElementById(`${prefix}-font-name-other`)?.value?.trim() || '';
+  }
+  return document.getElementById(`${prefix}-font-name`)?.value || '';
+}
+
+function updateFontNameUI(prefix, fontName) {
+  const typeHidden = document.getElementById(`${prefix}-font-type`);
+  const types = parseMultiValue(typeHidden?.value || '');
+  const selectEl = document.getElementById(`${prefix}-font-name`);
+  const otherEl = document.getElementById(`${prefix}-font-name-other`);
+  if (!selectEl) return;
+
+  const useOtherInput = isOtherFontType(types);
+  selectEl.hidden = useOtherInput;
+  if (otherEl) {
+    otherEl.hidden = !useOtherInput;
+    if (useOtherInput) {
+      if (fontName !== undefined) otherEl.value = fontName;
+      return;
+    }
+    otherEl.value = '';
+  }
+
+  const current = fontName !== undefined ? fontName : selectEl.value;
+  fillFontNameSelect(`${prefix}-font-name`, current, getFontsForTypes(types));
+}
+
+function fillFontNameSelect(id, value, fonts) {
   const el = document.getElementById(id);
   if (!el) return;
+  const list = fonts || ALL_LISTED_FONTS;
   const current = value !== undefined ? value : el.value;
   let html = '<option value="">選択してください</option>';
-  html += '<optgroup label="日本語">';
-  JAPANESE_FONTS.forEach(v => { html += `<option value="${esc(v)}">${esc(v)}</option>`; });
-  html += '</optgroup><optgroup label="欧文">';
-  WESTERN_FONTS.forEach(v => { html += `<option value="${esc(v)}">${esc(v)}</option>`; });
-  html += '</optgroup>';
+
+  const grouped = Object.entries(FONTS_BY_TYPE).filter(([, items]) =>
+    items.some(f => list.includes(f))
+  );
+  if (grouped.length) {
+    grouped.forEach(([label, items]) => {
+      const opts = items.filter(f => list.includes(f));
+      if (!opts.length) return;
+      html += `<optgroup label="${esc(label)}">`;
+      opts.forEach(v => { html += `<option value="${esc(v)}">${esc(v)}</option>`; });
+      html += '</optgroup>';
+    });
+  } else {
+    list.forEach(v => { html += `<option value="${esc(v)}">${esc(v)}</option>`; });
+  }
   el.innerHTML = html;
 
   const val = parseMultiValue(current)[0] || current;
@@ -1276,7 +1342,7 @@ function initFormSelects() {
   ['add', 'edit'].forEach(prefix => {
     fillSelect(`${prefix}-site-type`, SITE_TYPES);
     fillSelect(`${prefix}-industry`, INDUSTRIES);
-    fillFontNameSelect(`${prefix}-font-name`);
+    updateFontNameUI(prefix);
   });
   initAddFormPickers();
 }
@@ -1305,6 +1371,9 @@ function toggleFormOption(hiddenInputId, btn) {
     btn.classList.add('active');
   }
   hidden.value = joinMultiValue(selected);
+  if (hiddenInputId === 'add-font-type' || hiddenInputId === 'edit-font-type') {
+    updateFontNameUI(hiddenInputId.replace('-font-type', ''));
+  }
 }
 
 function clearMultiOptionPicker(hiddenInputId) {
@@ -1329,13 +1398,21 @@ function initEditFormPickers(item) {
   renderMultiOptionButtons('edit-motion-options', 'edit-motion', MOTION_TYPES);
   document.getElementById('edit-font-type').value = item.font_type || '';
   renderMultiOptionButtons('edit-font-type-options', 'edit-font-type', FONT_TYPES);
-  fillFontNameSelect('edit-font-name', parseMultiValue(item.font_name || '')[0] || '');
+  updateFontNameUI('edit', parseMultiValue(item.font_name || '')[0] || item.font_name || '');
 }
 
 function clearAddFormPickers() {
   ['add-color', 'add-taste', 'add-motion', 'add-font-type'].forEach(clearMultiOptionPicker);
   const fontEl = document.getElementById('add-font-name');
-  if (fontEl) fontEl.value = '';
+  if (fontEl) {
+    fontEl.value = '';
+    fontEl.hidden = false;
+  }
+  const otherEl = document.getElementById('add-font-name-other');
+  if (otherEl) {
+    otherEl.value = '';
+    otherEl.hidden = true;
+  }
 }
 
 /* ── Utils ── */
