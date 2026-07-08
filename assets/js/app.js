@@ -876,9 +876,13 @@ function applyAddFormDraft(d) {
   document.getElementById('add-taste').value = d.taste || '';
   document.getElementById('add-motion').value = d.motion || '';
   document.getElementById('add-font-type').value = d.font_type || '';
-  document.getElementById('add-font-name').value = d.font_name || '';
-  const otherEl = document.getElementById('add-font-name-other');
-  if (otherEl) otherEl.value = '';
+  const addFontHidden = document.getElementById('add-font-name');
+  if (addFontHidden) addFontHidden.value = '';
+  const addOtherEl = document.getElementById('add-font-name-other');
+  if (addOtherEl) {
+    addOtherEl.value = '';
+    addOtherEl.hidden = true;
+  }
   document.getElementById('add-memo').value = d.memo || '';
   addTitleTouched = !!d.addTitleTouched;
   lastAutoTitle = d.lastAutoTitle || '';
@@ -903,7 +907,8 @@ function resetAddForm() {
   document.getElementById('add-industry').value = '';
   document.getElementById('add-site-type').value = '';
   document.getElementById('add-color').value = '';
-  document.getElementById('add-font-name').value = '';
+  const addFontHidden = document.getElementById('add-font-name');
+  if (addFontHidden) addFontHidden.value = '';
   const addOtherEl = document.getElementById('add-font-name-other');
   if (addOtherEl) {
     addOtherEl.value = '';
@@ -1267,67 +1272,46 @@ function getFontsForTypes(types) {
 }
 
 function getFontNameValue(prefix) {
-  const types = parseMultiValue(document.getElementById(`${prefix}-font-type`)?.value || '');
-  if (isOtherFontType(types)) {
-    return document.getElementById(`${prefix}-font-name-other`)?.value?.trim() || '';
-  }
-  return document.getElementById(`${prefix}-font-name`)?.value || '';
+  const fromButtons = parseMultiValue(document.getElementById(`${prefix}-font-name`)?.value || '');
+  const fromOther = parseMultiValue(document.getElementById(`${prefix}-font-name-other`)?.value || '');
+  return joinMultiValue([...fromButtons, ...fromOther]);
 }
 
 function updateFontNameUI(prefix, fontName) {
-  const typeHidden = document.getElementById(`${prefix}-font-type`);
-  const types = parseMultiValue(typeHidden?.value || '');
-  const selectEl = document.getElementById(`${prefix}-font-name`);
+  const types = parseMultiValue(document.getElementById(`${prefix}-font-type`)?.value || '');
+  const hasOtherType = isOtherFontType(types);
+  const onlyOther = hasOtherType && types.filter(t => t !== 'その他').length === 0;
+  const container = document.getElementById(`${prefix}-font-name-options`);
+  const hidden = document.getElementById(`${prefix}-font-name`);
   const otherEl = document.getElementById(`${prefix}-font-name-other`);
-  if (!selectEl) return;
+  if (!hidden) return;
 
-  const useOtherInput = isOtherFontType(types);
-  selectEl.hidden = useOtherInput;
-  if (otherEl) {
-    otherEl.hidden = !useOtherInput;
-    if (useOtherInput) {
-      if (fontName !== undefined) otherEl.value = fontName;
-      return;
+  const allSelected = fontName !== undefined
+    ? parseMultiValue(fontName)
+    : [...parseMultiValue(hidden.value), ...parseMultiValue(otherEl?.value || '')];
+
+  if (onlyOther) {
+    if (container) container.innerHTML = '';
+    hidden.value = '';
+    if (otherEl) {
+      otherEl.hidden = false;
+      otherEl.value = joinMultiValue(allSelected);
     }
-    otherEl.value = '';
+    return;
   }
 
-  const current = fontName !== undefined ? fontName : selectEl.value;
-  fillFontNameSelect(`${prefix}-font-name`, current, getFontsForTypes(types));
-}
+  const availableFonts = getFontsForTypes(types.filter(t => t !== 'その他'));
+  const listedSelected = allSelected.filter(f => availableFonts.includes(f) || ALL_LISTED_FONTS.includes(f));
+  const customSelected = allSelected.filter(f => !ALL_LISTED_FONTS.includes(f));
+  const options = [...new Set([...availableFonts, ...listedSelected])];
 
-function fillFontNameSelect(id, value, fonts) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const list = fonts || ALL_LISTED_FONTS;
-  const current = value !== undefined ? value : el.value;
-  let html = '<option value="">選択してください</option>';
+  hidden.value = joinMultiValue(listedSelected);
+  renderMultiOptionButtons(`${prefix}-font-name-options`, `${prefix}-font-name`, options);
 
-  const grouped = Object.entries(FONTS_BY_TYPE).filter(([, items]) =>
-    items.some(f => list.includes(f))
-  );
-  if (grouped.length) {
-    grouped.forEach(([label, items]) => {
-      const opts = items.filter(f => list.includes(f));
-      if (!opts.length) return;
-      html += `<optgroup label="${esc(label)}">`;
-      opts.forEach(v => { html += `<option value="${esc(v)}">${esc(v)}</option>`; });
-      html += '</optgroup>';
-    });
-  } else {
-    list.forEach(v => { html += `<option value="${esc(v)}">${esc(v)}</option>`; });
+  if (otherEl) {
+    otherEl.hidden = !hasOtherType;
+    otherEl.value = hasOtherType ? joinMultiValue(customSelected) : '';
   }
-  el.innerHTML = html;
-
-  const val = parseMultiValue(current)[0] || current;
-  if (!val) return;
-  if (![...el.options].some(o => o.value === val)) {
-    const opt = document.createElement('option');
-    opt.value = val;
-    opt.textContent = val;
-    el.add(opt);
-  }
-  el.value = val;
 }
 
 function resolveSectionFromActiveCategory() {
@@ -1342,9 +1326,10 @@ function initFormSelects() {
   ['add', 'edit'].forEach(prefix => {
     fillSelect(`${prefix}-site-type`, SITE_TYPES);
     fillSelect(`${prefix}-industry`, INDUSTRIES);
-    updateFontNameUI(prefix);
   });
   initAddFormPickers();
+  updateFontNameUI('add');
+  updateFontNameUI('edit');
 }
 
 function renderMultiOptionButtons(containerId, hiddenInputId, options) {
@@ -1398,16 +1383,13 @@ function initEditFormPickers(item) {
   renderMultiOptionButtons('edit-motion-options', 'edit-motion', MOTION_TYPES);
   document.getElementById('edit-font-type').value = item.font_type || '';
   renderMultiOptionButtons('edit-font-type-options', 'edit-font-type', FONT_TYPES);
-  updateFontNameUI('edit', parseMultiValue(item.font_name || '')[0] || item.font_name || '');
+  updateFontNameUI('edit', item.font_name || '');
 }
 
 function clearAddFormPickers() {
-  ['add-color', 'add-taste', 'add-motion', 'add-font-type'].forEach(clearMultiOptionPicker);
-  const fontEl = document.getElementById('add-font-name');
-  if (fontEl) {
-    fontEl.value = '';
-    fontEl.hidden = false;
-  }
+  ['add-color', 'add-taste', 'add-motion', 'add-font-type', 'add-font-name'].forEach(clearMultiOptionPicker);
+  const container = document.getElementById('add-font-name-options');
+  if (container) container.innerHTML = '';
   const otherEl = document.getElementById('add-font-name-other');
   if (otherEl) {
     otherEl.value = '';
