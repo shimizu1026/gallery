@@ -355,7 +355,7 @@ function addPartsCategoryFromEdit() {
   saveCustomPartsCategories(custom);
   if (input) input.value = '';
 
-  fillSectionSelect('edit-section', name);
+  fillSectionPicker('edit-section', name);
   renderCategoryNav();
   toast('パーツカテゴリーを追加しました');
 }
@@ -451,6 +451,7 @@ function navigate(view) {
 function onViewEnter(view) {
   if (view === 'add') {
     restoreAddFormDraft();
+    if (!addFormDraft) fillSectionPicker('add-section', getDefaultSectionForAdd());
   }
   if (view === 'home') renderHome();
   if (view === 'detail' && currentId) renderDetail(currentId);
@@ -802,7 +803,7 @@ function renderEdit(id) {
   document.getElementById('edit-industry').value = item.industry || '';
   document.getElementById('edit-site-type').value = item.site_type || '';
   document.getElementById('edit-memo').value = item.memo || '';
-  fillSectionSelect('edit-section', item.section || '');
+  fillSectionPicker('edit-section', item.section || '');
   initEditFormPickers(item);
 }
 
@@ -910,6 +911,7 @@ function captureAddFormDraft() {
     motion: document.getElementById('add-motion')?.value || '',
     font_type: document.getElementById('add-font-type')?.value || '',
     font_name: getFontNameValue('add'),
+    section: document.getElementById('add-section')?.value || '',
     memo: document.getElementById('add-memo')?.value || '',
     pendingImage: pendingImage || null,
     addTitleTouched,
@@ -918,7 +920,7 @@ function captureAddFormDraft() {
 
   const hasContent = draft.title || draft.url || draft.industry || draft.site_type
     || draft.color || draft.taste || draft.motion || draft.font_type
-    || draft.font_name || draft.memo || draft.pendingImage;
+    || draft.font_name || draft.section || draft.memo || draft.pendingImage;
 
   if (!hasContent) {
     addFormDraft = null;
@@ -952,6 +954,7 @@ function applyAddFormDraft(d) {
   lastAutoTitle = d.lastAutoTitle || '';
   initAddFormPickers();
   updateFontNameUI('add', d.font_name || '');
+  fillSectionPicker('add-section', d.section || getDefaultSectionForAdd());
   pendingImage = d.pendingImage || null;
   if (pendingImage) setPreview(pendingImage);
   else document.getElementById('preview-area').innerHTML = previewChoiceHTML();
@@ -982,6 +985,10 @@ function resetAddForm() {
   lastAutoTitle = '';
   addTitleTouched = false;
   clearAddFormPickers();
+  const addSection = document.getElementById('add-section');
+  if (addSection) addSection.value = '';
+  const addSectionPicker = document.getElementById('add-section-picker');
+  if (addSectionPicker) addSectionPicker.innerHTML = '';
   pendingImage = null;
   document.getElementById('preview-area').innerHTML = previewChoiceHTML();
 }
@@ -1134,7 +1141,7 @@ async function saveItemAsync() {
       title,
       url: document.getElementById('add-url').value.trim(),
       company: '',
-      section: resolveSectionFromActiveCategory(),
+      section: document.getElementById('add-section')?.value || resolveSectionFromActiveCategory(),
       industry: document.getElementById('add-industry').value,
       site_type: document.getElementById('add-site-type').value,
       color: document.getElementById('add-color').value,
@@ -1337,25 +1344,64 @@ function getAllSectionOptions() {
   return options;
 }
 
-function fillSectionSelect(id, value) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  let html = '<option value="">未分類</option>';
-  getAllSectionOptions().forEach(({ group, items }) => {
-    html += `<optgroup label="${esc(group)}">`;
-    items.forEach(v => { html += `<option value="${esc(v)}">${esc(v)}</option>`; });
-    html += '</optgroup>';
-  });
-  el.innerHTML = html;
+function getDefaultSectionForAdd() {
+  if (!activeCategory || activeCategory === 'ALL') return '';
+  if (getAllCategoryLeaves().includes(activeCategory)) return activeCategory;
+  return '';
+}
 
-  const val = value || '';
-  if (val && ![...el.options].some(o => o.value === val)) {
-    const opt = document.createElement('option');
-    opt.value = val;
-    opt.textContent = val;
-    el.add(opt);
+function fillSectionPicker(hiddenInputId, value) {
+  const hidden = document.getElementById(hiddenInputId);
+  const container = document.getElementById(`${hiddenInputId}-picker`);
+  if (!hidden || !container) return;
+
+  const val = value !== undefined ? value : hidden.value;
+  hidden.value = val || '';
+
+  let html = '';
+  getAllSectionOptions().forEach(({ group, items }) => {
+    html += `<p class="section-picker-label">${esc(group)}</p>`;
+    html += '<div class="option-group section-picker-group">';
+    items.forEach(item => {
+      const active = hidden.value === item ? ' active' : '';
+      html += `<button type="button" class="option-btn${active}" data-value="${esc(item)}" data-target="${hiddenInputId}" onclick="selectSectionOption('${hiddenInputId}', this)">${esc(item)}</button>`;
+    });
+    html += '</div>';
+  });
+  container.innerHTML = html;
+
+  if (val) {
+    const hasMatch = [...container.querySelectorAll(`.option-btn[data-target="${hiddenInputId}"]`)]
+      .some(b => b.dataset.value === val);
+    if (!hasMatch) {
+      const label = document.createElement('p');
+      label.className = 'section-picker-label';
+      label.textContent = '現在のカテゴリー';
+      container.appendChild(label);
+      const wrap = document.createElement('div');
+      wrap.className = 'option-group section-picker-group';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'option-btn active';
+      btn.dataset.value = val;
+      btn.dataset.target = hiddenInputId;
+      btn.textContent = val;
+      btn.onclick = () => selectSectionOption(hiddenInputId, btn);
+      wrap.appendChild(btn);
+      container.appendChild(wrap);
+    }
   }
-  if (val) el.value = val;
+}
+
+function selectSectionOption(hiddenInputId, btn) {
+  const hidden = document.getElementById(hiddenInputId);
+  const value = btn.dataset.value;
+  const next = hidden.value === value ? '' : value;
+  hidden.value = next;
+  document.querySelectorAll(`.option-btn[data-target="${hiddenInputId}"]`).forEach(b => {
+    b.classList.toggle('active', b.dataset.value === next);
+  });
+  if (hiddenInputId === 'add-section') scheduleCaptureAddFormDraft();
 }
 
 function isOtherFontType(types) {
@@ -1427,6 +1473,8 @@ function initFormSelects() {
   initAddFormPickers();
   updateFontNameUI('add');
   updateFontNameUI('edit');
+  fillSectionPicker('add-section', getDefaultSectionForAdd());
+  fillSectionPicker('edit-section', '');
 }
 
 function renderMultiOptionButtons(containerId, hiddenInputId, options) {

@@ -318,6 +318,15 @@
     .category-group { margin-top: 0.25rem; }
     .category-custom { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
 
+    .section-picker-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--gray);
+      margin: 0.75rem 0 0.5rem;
+    }
+    .section-picker-label:first-child { margin-top: 0; }
+    .section-picker-group { margin-bottom: 0.25rem; }
+
     .category-add {
       display: flex;
       gap: 0.375rem;
