@@ -44,7 +44,7 @@ const MOTION_TYPES = [
   'Parallax', 'Three.js / 3D', 'GSAP', 'Lottie', 'CSS Animation',
   'SVGアニメーション', 'マイクロインタラクション', 'トップボタン'
 ];
-const FONT_TYPES = ['グーグルフォント', 'アドビフォント', 'フリーフォント', 'その他'];
+const FONT_TYPES = ['グーグルフォント', 'アドビフォント', 'フリーフォント', 'ゴシック', '明朝', 'その他'];
 const FONTS_BY_TYPE = {
   'グーグルフォント': [
     'Noto Sans JP', 'Noto Serif JP', 'Roboto', 'Inter', 'Open Sans', 'Lato',
@@ -58,6 +58,17 @@ const FONTS_BY_TYPE = {
   'フリーフォント': [
     'BIZ UDPGothic', 'BIZ UDPMincho', '源ノ角ゴシック', '源ノ明朝',
     '游ゴシック', '游明朝', 'Helvetica Neue', 'Arial'
+  ],
+  'ゴシック': [
+    'Noto Sans JP', 'Roboto', 'Inter', 'Open Sans', 'Lato', 'Montserrat', 'Poppins',
+    'Oswald', 'Raleway', 'M PLUS 1p', 'Zen Kaku Gothic New', 'Source Sans 3',
+    'Source Han Sans', 'Acumin Pro', 'Myriad Pro', 'Kozuka Gothic Pro',
+    'BIZ UDPGothic', '源ノ角ゴシック', '游ゴシック', 'Helvetica Neue', 'Arial'
+  ],
+  '明朝': [
+    'Noto Serif JP', 'Playfair Display', 'Shippori Mincho', 'Zen Old Mincho',
+    'Source Han Serif', 'Minion Pro', 'Kozuka Mincho Pro', 'Adobe Garamond Pro',
+    'BIZ UDPMincho', '源ノ明朝', '游明朝'
   ]
 };
 const ALL_LISTED_FONTS = [...new Set(Object.values(FONTS_BY_TYPE).flat())];
