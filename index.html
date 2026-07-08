@@ -350,6 +350,28 @@
                 />
               </div>
               <div class="form-group">
+                <label for="edit-section">カテゴリー</label>
+                <select id="edit-section"></select>
+              </div>
+              <div class="form-group">
+                <label for="edit-parts-category-input">パーツカテゴリーを追加</label>
+                <div class="category-add">
+                  <input
+                    type="text"
+                    id="edit-parts-category-input"
+                    placeholder="パーツ名（例：ボタン）"
+                    maxlength="40"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-sm category-add-btn"
+                    onclick="addPartsCategoryFromEdit()"
+                  >
+                    追加
+                  </button>
+                </div>
+              </div>
+              <div class="form-group">
                 <label for="edit-memo">メモ</label>
                 <textarea id="edit-memo"></textarea>
               </div>

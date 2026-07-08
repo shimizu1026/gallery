@@ -1,6 +1,7 @@
 /* ── Supabase Config ── */
 const CONFIG_KEY = 'ref-gallery-supabase-config';
 const CUSTOM_CATEGORIES_KEY = 'ref-gallery-custom-categories';
+const CUSTOM_PARTS_CATEGORIES_KEY = 'ref-gallery-custom-parts-categories';
 const ADD_DRAFT_KEY = 'ref-gallery-add-draft';
 const BUCKET = 'screenshots';
 const TABLE = 'ref_items';
@@ -275,10 +276,32 @@ function saveCustomCategories(list) {
   localStorage.setItem(CUSTOM_CATEGORIES_KEY, JSON.stringify(list));
 }
 
+function getCustomPartsCategories() {
+  try {
+    return JSON.parse(localStorage.getItem(CUSTOM_PARTS_CATEGORIES_KEY) || '[]');
+  } catch { return []; }
+}
+
+function saveCustomPartsCategories(list) {
+  localStorage.setItem(CUSTOM_PARTS_CATEGORIES_KEY, JSON.stringify(list));
+}
+
+function getPartsCategoryItems() {
+  const parts = BUILTIN_CATEGORY_TREE.find(g => g.group === 'パーツ');
+  return [...(parts?.items || []), ...getCustomPartsCategories()];
+}
+
+function getCategoryGroupItems(groupName) {
+  if (groupName === 'パーツ') return getPartsCategoryItems();
+  const group = BUILTIN_CATEGORY_TREE.find(g => g.group === groupName);
+  return group?.items || [];
+}
+
 function getAllBuiltinLeaves() {
   const leaves = [];
   BUILTIN_CATEGORY_TREE.forEach(({ group, items }) => {
-    if (items.length) leaves.push(...items);
+    const groupItems = group === 'パーツ' ? getPartsCategoryItems() : items;
+    if (groupItems.length) leaves.push(...groupItems);
     else leaves.push(group);
   });
   return leaves;
@@ -290,7 +313,10 @@ function getAllCategoryLeaves() {
 
 function getCategoryFilterValues(active) {
   const builtin = BUILTIN_CATEGORY_TREE.find(g => g.group === active);
-  if (builtin) return builtin.items.length ? builtin.items : [active];
+  if (builtin) {
+    if (builtin.items.length) return getCategoryGroupItems(active);
+    return [active];
+  }
   if (active === 'カスタム') return getCustomCategories();
   return [active];
 }
@@ -317,6 +343,23 @@ function addCustomCategory() {
   toast('カテゴリーを追加しました');
 }
 
+function addPartsCategoryFromEdit() {
+  const input = document.getElementById('edit-parts-category-input');
+  const name = input?.value.trim();
+  if (!name) { toast('カテゴリー名を入力してください'); return; }
+  if (name === 'ALL' || name === 'カスタム') { toast('この名前は使えません'); return; }
+  if (getAllCategoryLeaves().includes(name)) { toast('既に存在するカテゴリーです'); return; }
+
+  const custom = getCustomPartsCategories();
+  custom.push(name);
+  saveCustomPartsCategories(custom);
+  if (input) input.value = '';
+
+  fillSectionSelect('edit-section', name);
+  renderCategoryNav();
+  toast('パーツカテゴリーを追加しました');
+}
+
 function categoryBtn(cat, isChild = false) {
   const active = cat === activeCategory ? ' active' : '';
   const childClass = isChild ? ' is-child' : '';
@@ -331,11 +374,12 @@ function renderCategoryNav() {
   let html = categoryBtn('ALL');
 
   BUILTIN_CATEGORY_TREE.forEach(({ group, items }) => {
-    if (!items.length) {
+    const groupItems = group === 'パーツ' ? getPartsCategoryItems() : items;
+    if (!groupItems.length) {
       html += categoryBtn(group);
     } else {
       html += categoryBtn(group);
-      items.forEach(item => { html += categoryBtn(item, true); });
+      groupItems.forEach(item => { html += categoryBtn(item, true); });
     }
   });
 
@@ -428,6 +472,13 @@ document.getElementById('custom-category-input')?.addEventListener('keydown', (e
   if (e.key === 'Enter') {
     e.preventDefault();
     addCustomCategory();
+  }
+});
+
+document.getElementById('edit-parts-category-input')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    addPartsCategoryFromEdit();
   }
 });
 
@@ -751,6 +802,7 @@ function renderEdit(id) {
   document.getElementById('edit-industry').value = item.industry || '';
   document.getElementById('edit-site-type').value = item.site_type || '';
   document.getElementById('edit-memo').value = item.memo || '';
+  fillSectionSelect('edit-section', item.section || '');
   initEditFormPickers(item);
 }
 
@@ -774,6 +826,7 @@ async function updateItemAsync() {
     motion: document.getElementById('edit-motion').value,
     font_type: document.getElementById('edit-font-type').value,
     font_name: getFontNameValue('edit'),
+    section: document.getElementById('edit-section').value,
     memo: document.getElementById('edit-memo').value.trim()
   };
 
@@ -1270,6 +1323,39 @@ function fillSelect(id, options, placeholder = '選択してください') {
   el.innerHTML = `<option value="">${placeholder}</option>` +
     options.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
   if ([...el.options].some(o => o.value === current)) el.value = current;
+}
+
+function getAllSectionOptions() {
+  const options = [];
+  BUILTIN_CATEGORY_TREE.forEach(({ group, items }) => {
+    const groupItems = group === 'パーツ' ? getPartsCategoryItems() : items;
+    if (groupItems.length) options.push({ group, items: groupItems });
+    else options.push({ group, items: [group] });
+  });
+  const custom = getCustomCategories();
+  if (custom.length) options.push({ group: 'カスタム', items: custom });
+  return options;
+}
+
+function fillSectionSelect(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let html = '<option value="">未分類</option>';
+  getAllSectionOptions().forEach(({ group, items }) => {
+    html += `<optgroup label="${esc(group)}">`;
+    items.forEach(v => { html += `<option value="${esc(v)}">${esc(v)}</option>`; });
+    html += '</optgroup>';
+  });
+  el.innerHTML = html;
+
+  const val = value || '';
+  if (val && ![...el.options].some(o => o.value === val)) {
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = val;
+    el.add(opt);
+  }
+  if (val) el.value = val;
 }
 
 function isOtherFontType(types) {
