@@ -19,9 +19,6 @@ const BUILTIN_CATEGORY_TREE = [
     group: 'パーツ',
     items: ['カード・リスト', 'モーダル・ポップアップ', 'メガメニュー', 'スライダー']
   },
-  { group: 'フォント', items: [] },
-  { group: 'スマホ', items: [] },
-  { group: 'UI', items: [] },
 ];
 const INDUSTRIES = [
   'IT・SaaS', 'EC・小売', '金融', '不動産', '医療・健康', '教育', 'メディア', '飲食',
