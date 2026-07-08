@@ -340,8 +340,8 @@ function addCustomCategory() {
   toast('カテゴリーを追加しました');
 }
 
-function addPartsCategoryFromEdit() {
-  const input = document.getElementById('edit-parts-category-input');
+function addPartsCategory(prefix) {
+  const input = document.getElementById(`${prefix}-parts-category-input`);
   const name = input?.value.trim();
   if (!name) { toast('カテゴリー名を入力してください'); return; }
   if (name === 'ALL' || name === 'カスタム') { toast('この名前は使えません'); return; }
@@ -352,8 +352,9 @@ function addPartsCategoryFromEdit() {
   saveCustomPartsCategories(custom);
   if (input) input.value = '';
 
-  fillSectionPicker('edit-section', name);
+  fillSectionPicker(`${prefix}-section`, name);
   renderCategoryNav();
+  if (prefix === 'add') scheduleCaptureAddFormDraft();
   toast('パーツカテゴリーを追加しました');
 }
 
@@ -476,7 +477,14 @@ document.getElementById('custom-category-input')?.addEventListener('keydown', (e
 document.getElementById('edit-parts-category-input')?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') {
     e.preventDefault();
-    addPartsCategoryFromEdit();
+    addPartsCategory('edit');
+  }
+});
+
+document.getElementById('add-parts-category-input')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    addPartsCategory('add');
   }
 });
 
@@ -986,6 +994,8 @@ function resetAddForm() {
   if (addSection) addSection.value = '';
   const addSectionPicker = document.getElementById('add-section-picker');
   if (addSectionPicker) addSectionPicker.innerHTML = '';
+  const addPartsInput = document.getElementById('add-parts-category-input');
+  if (addPartsInput) addPartsInput.value = '';
   pendingImage = null;
   document.getElementById('preview-area').innerHTML = previewChoiceHTML();
 }
@@ -1125,7 +1135,7 @@ function saveItem() {
 
 async function saveItemAsync() {
   const title = document.getElementById('add-title').value.trim();
-  if (!title) { toast('サイト名を入力してください'); return; }
+  if (!title) { toast('タイトルを入力してください'); return; }
 
   showLoading(true);
   try {
