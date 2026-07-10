@@ -141,8 +141,19 @@
 
           <!-- ADD -->
           <section class="view" id="view-add">
-            <h2>新規追加</h2>
-            <p class="subtitle">参考サイトを登録・スクリーンショットを保存</p>
+            <div class="view-header">
+              <div>
+                <h2>新規追加</h2>
+                <p class="subtitle">参考サイトを登録・スクリーンショットを保存</p>
+              </div>
+              <button
+                class="btn btn-outline btn-sm"
+                type="button"
+                onclick="clearAddForm()"
+              >
+                入力をクリア
+              </button>
+            </div>
 
             <input type="file" id="file-input" accept="image/*" hidden />
 
@@ -278,7 +289,6 @@
               </div>
               <div class="add-form-actions">
                 <button class="btn" type="button" onclick="saveItem()">保存する</button>
-                <button class="btn btn-outline" type="button" onclick="clearAddForm()">入力をクリア</button>
                 <button class="btn btn-outline" type="button" onclick="navigate('home')">戻る</button>
               </div>
             </div>
