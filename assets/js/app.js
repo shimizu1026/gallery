@@ -75,6 +75,7 @@ let supabaseClient = null;
 let items = [];
 let currentId = null;
 let pendingImage = null;
+let previewContext = 'add';
 let activeCategory = 'ALL';
 
 const filterSelections = {
@@ -593,6 +594,7 @@ function navigate(view) {
   const prev = document.querySelector('.view.active');
   const prevView = prev?.id?.replace('view-', '');
   if (prevView === 'add') captureAddFormDraft();
+  if (prevView === 'edit') pendingImage = null;
 
   const next = document.getElementById('view-' + view);
 
@@ -628,6 +630,7 @@ function navigate(view) {
 }
 
 function onViewEnter(view) {
+  previewContext = view === 'edit' ? 'edit' : 'add';
   if (view === 'add') {
     restoreAddFormDraft();
     if (!addFormDraft) fillSectionPicker('add-section', getDefaultSectionForAdd());
@@ -988,14 +991,41 @@ function renderDetail(id) {
 }
 
 /* ── Edit ── */
+function getPreviewEl() {
+  return document.getElementById(previewContext === 'edit' ? 'edit-preview' : 'preview-area');
+}
+
+function renderEditPreview(item) {
+  const el = getPreviewEl();
+  if (!el) return;
+
+  if (pendingImage) {
+    setPreview(pendingImage);
+    return;
+  }
+
+  el.classList.remove('has-existing-image');
+  if (item?.image) {
+    el.classList.add('has-existing-image');
+    el.innerHTML = `
+      <div class="preview-image-wrap">
+        <img src="${esc(item.image)}" alt="">
+      </div>
+      ${previewChoiceHTML('edit')}
+    `;
+    return;
+  }
+
+  el.innerHTML = previewChoiceHTML('edit');
+}
+
 function renderEdit(id) {
   const item = items.find(i => i.id === id);
   if (!item) return;
 
-  const preview = document.getElementById('edit-preview');
-  preview.innerHTML = item.image
-    ? `<img src="${item.image}" alt="">`
-    : `<div class="empty-state">${placeholderSVG()}<p>画像なし</p></div>`;
+  pendingImage = null;
+  previewContext = 'edit';
+  renderEditPreview(item);
 
   document.getElementById('edit-title').value = item.title || '';
   document.getElementById('edit-url').value = item.url || '';
@@ -1031,13 +1061,32 @@ async function updateItemAsync() {
   };
 
   showLoading(true);
-  const { error } = await supabaseClient.from(TABLE).update(updates).eq('id', currentId);
-  showLoading(false);
+  try {
+    if (pendingImage) {
+      const newPath = await uploadImage(pendingImage);
+      if (item.image_path) {
+        await supabaseClient.storage.from(BUCKET).remove([item.image_path]);
+      }
+      updates.image_path = newPath;
+    }
 
-  if (error) { toast(formatDbError(error)); return; }
-  Object.assign(item, updates);
-  toast('更新しました');
-  navigate('detail');
+    const { error } = await supabaseClient.from(TABLE).update(updates).eq('id', currentId);
+    if (error) throw error;
+
+    Object.assign(item, updates);
+    if (updates.image_path) {
+      item.image_path = updates.image_path;
+      item.image = getPublicUrl(updates.image_path);
+    }
+    pendingImage = null;
+    toast('更新しました');
+    navigate('detail');
+  } catch (err) {
+    toast(formatDbError(err));
+    console.error(err);
+  } finally {
+    showLoading(false);
+  }
 }
 
 function deleteCurrent() {
@@ -1068,14 +1117,15 @@ function showUrlForm() {
   pendingImage = null;
 }
 
-function previewChoiceHTML() {
+function previewChoiceHTML(context = previewContext) {
+  const fileInputId = context === 'edit' ? 'edit-file-input' : 'file-input';
   return `<div class="preview-choice">
     <button type="button" class="preview-choice-btn" onclick="startCapture()">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
       <span>画面キャプチャ</span>
     </button>
     <div class="preview-choice-divider"></div>
-    <button type="button" class="preview-choice-btn" onclick="document.getElementById('file-input').click()">
+    <button type="button" class="preview-choice-btn" onclick="document.getElementById('${fileInputId}').click()">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <span>画像アップロード</span>
     </button>
@@ -1302,7 +1352,10 @@ function initAddFormAutoTitle() {
 
 function setPreview(dataUrl) {
   pendingImage = dataUrl;
-  document.getElementById('preview-area').innerHTML = `
+  const el = getPreviewEl();
+  if (!el) return;
+  el.classList.remove('has-existing-image');
+  el.innerHTML = `
     <img src="${dataUrl}" alt="preview">
     <button type="button" class="preview-remove-btn" onclick="clearPreviewImage()" title="画像を削除" aria-label="画像を削除">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
@@ -1313,12 +1366,19 @@ function setPreview(dataUrl) {
       </svg>
     </button>
   `;
-  scheduleCaptureAddFormDraft();
+  if (previewContext === 'add') scheduleCaptureAddFormDraft();
 }
 
 function clearPreviewImage() {
   pendingImage = null;
-  document.getElementById('preview-area').innerHTML = previewChoiceHTML();
+  const el = getPreviewEl();
+  if (!el) return;
+  if (previewContext === 'edit') {
+    const item = items.find(i => i.id === currentId);
+    renderEditPreview(item);
+    return;
+  }
+  el.innerHTML = previewChoiceHTML();
   scheduleCaptureAddFormDraft();
 }
 
@@ -1372,7 +1432,15 @@ async function saveItemAsync() {
 }
 
 document.getElementById('file-input').addEventListener('change', e => {
-  const file = e.target.files[0];
+  handleImageFileSelect(e.target);
+});
+
+document.getElementById('edit-file-input')?.addEventListener('change', e => {
+  handleImageFileSelect(e.target);
+});
+
+function handleImageFileSelect(input) {
+  const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = async ev => {
@@ -1380,8 +1448,8 @@ document.getElementById('file-input').addEventListener('change', e => {
     setPreview(webpDataUrl);
   };
   reader.readAsDataURL(file);
-  e.target.value = '';
-});
+  input.value = '';
+}
 
 /* ── Screen Capture ── */
 async function startCapture() {
