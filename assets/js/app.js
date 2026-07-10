@@ -122,6 +122,11 @@ function openSetupModal() {
     document.getElementById('cfg-url').value = cfg.url || '';
     document.getElementById('cfg-key').value = cfg.key || '';
   }
+  const draft = loadAddFormDraftFromStorage();
+  const draftBtn = document.getElementById('sync-draft-btn');
+  if (draftBtn) {
+    draftBtn.hidden = !draft || !(draft.title || draft.url || draft.pendingImage);
+  }
   document.getElementById('setup-modal').classList.add('active');
 }
 
@@ -157,6 +162,182 @@ async function saveSupabaseConfig() {
     const msg = err?.message || String(err);
     toast(msg.includes('ref_items') ? 'テーブルがありません。SQL Editor で supabase-setup.sql を実行してください' : `接続失敗: ${msg}`);
     console.error(err);
+  }
+}
+
+function itemToExportRow(item) {
+  return {
+    title: item.title || '',
+    url: item.url || '',
+    company: item.company || '',
+    section: item.section || '',
+    memo: item.memo || '',
+    industry: item.industry || '',
+    site_type: item.site_type || '',
+    color: item.color || '',
+    taste: item.taste || '',
+    motion: item.motion || '',
+    font_type: item.font_type || '',
+    font_name: item.font_name || '',
+    image_url: item.image || null,
+    sections: item.sections || []
+  };
+}
+
+function draftToInsertRow(draft, imagePath = null) {
+  return {
+    title: draft.title?.trim() || '無題',
+    url: draft.url?.trim() || '',
+    company: '',
+    section: draft.section || '',
+    industry: draft.industry || '',
+    site_type: draft.site_type || '',
+    color: draft.color || '',
+    taste: draft.taste || '',
+    motion: draft.motion || '',
+    font_type: draft.font_type || '',
+    font_name: draft.font_name || '',
+    memo: draft.memo?.trim() || '',
+    image_path: imagePath,
+    sections: []
+  };
+}
+
+function exportItemsJson() {
+  if (!items.length) {
+    toast('エクスポートするデータがありません');
+    return;
+  }
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    items: items.map(itemToExportRow)
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `ref-gallery-export-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast(`${items.length} 件をエクスポートしました`);
+}
+
+async function uploadImageFromUrl(imageUrl) {
+  const res = await fetch(imageUrl);
+  if (!res.ok) throw new Error('画像の取得に失敗しました');
+  const blob = await res.blob();
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+  return uploadImage(dataUrl);
+}
+
+async function importItemsJson(file) {
+  if (!supabaseClient) { toast('Supabase に接続してください'); return; }
+  if (!file) return;
+
+  let payload;
+  try {
+    payload = JSON.parse(await file.text());
+  } catch {
+    toast('JSON ファイルの読み込みに失敗しました');
+    return;
+  }
+
+  const rows = Array.isArray(payload) ? payload : payload.items;
+  if (!Array.isArray(rows) || !rows.length) {
+    toast('インポートするデータがありません');
+    return;
+  }
+
+  if (!confirm(`${rows.length} 件を Supabase にインポートしますか？`)) return;
+
+  showLoading(true);
+  let success = 0;
+  try {
+    for (const row of rows) {
+      let imagePath = null;
+      if (row.image_url) {
+        try {
+          imagePath = await uploadImageFromUrl(row.image_url);
+        } catch (err) {
+          console.warn('画像の移行に失敗しました', row.title, err);
+        }
+      }
+
+      const insertRow = {
+        title: row.title?.trim() || '無題',
+        url: row.url?.trim() || '',
+        company: row.company || '',
+        section: row.section || '',
+        memo: row.memo?.trim() || '',
+        industry: row.industry || '',
+        site_type: row.site_type || '',
+        color: row.color || '',
+        taste: row.taste || '',
+        motion: row.motion || '',
+        font_type: row.font_type || '',
+        font_name: row.font_name || '',
+        image_path: imagePath,
+        sections: row.sections || []
+      };
+
+      const { error } = await supabaseClient.from(TABLE).insert(insertRow);
+      if (error) throw error;
+      success += 1;
+    }
+
+    await fetchItems();
+    renderHome();
+    toast(`${success} 件を Supabase に反映しました`);
+  } catch (err) {
+    toast(success ? `${success} 件まで反映しました: ${formatDbError(err)}` : formatDbError(err));
+    console.error(err);
+    if (success) await fetchItems();
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function syncDraftToSupabase() {
+  if (!supabaseClient) { toast('Supabase に接続してください'); return; }
+
+  const draft = loadAddFormDraftFromStorage() || addFormDraft;
+  if (!draft || !(draft.title || draft.url || draft.pendingImage)) {
+    toast('反映する下書きがありません');
+    return;
+  }
+  if (!draft.title?.trim()) {
+    toast('下書きにタイトルがありません');
+    return;
+  }
+  if (!confirm('新規追加の下書きを Supabase に保存しますか？')) return;
+
+  showLoading(true);
+  try {
+    let imagePath = null;
+    if (draft.pendingImage) {
+      imagePath = await uploadImage(draft.pendingImage);
+    }
+
+    const { error } = await supabaseClient.from(TABLE).insert(draftToInsertRow(draft, imagePath));
+    if (error) throw error;
+
+    addFormDraft = null;
+    sessionStorage.removeItem(ADD_DRAFT_KEY);
+    pendingImage = null;
+    await fetchItems();
+    renderHome();
+    closeSetupModal();
+    toast('下書きを Supabase に保存しました');
+  } catch (err) {
+    toast(formatDbError(err));
+    console.error(err);
+  } finally {
+    showLoading(false);
   }
 }
 
@@ -1627,5 +1808,11 @@ async function initApp() {
 
   renderHome();
 }
+
+document.getElementById('import-file-input')?.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) importItemsJson(file);
+  e.target.value = '';
+});
 
 initApp();

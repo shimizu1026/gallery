@@ -853,6 +853,22 @@
       margin: 1.5rem 0;
     }
 
+    .setup-data-tools {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+    .setup-data-hint {
+      font-size: 0.875rem;
+      color: var(--gray);
+      margin-bottom: 1rem;
+    }
+    .setup-data-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
     /* ── Capture Overlay ── */
     .capture-overlay {
       display: none;

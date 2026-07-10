@@ -486,8 +486,33 @@
             後で
           </button>
         </div>
+        <div class="setup-data-tools">
+          <p class="sidebar-label">データの移行</p>
+          <p class="setup-data-hint">
+            ローカル環境や別プロジェクトのデータを、今接続中の Supabase に移せます。
+          </p>
+          <div class="setup-data-actions">
+            <button class="btn btn-outline btn-sm" type="button" onclick="exportItemsJson()">
+              データをエクスポート
+            </button>
+            <button class="btn btn-outline btn-sm" type="button" onclick="document.getElementById('import-file-input').click()">
+              データをインポート
+            </button>
+            <button
+              class="btn btn-outline btn-sm"
+              type="button"
+              id="sync-draft-btn"
+              onclick="syncDraftToSupabase()"
+              hidden
+            >
+              下書きをSupabaseに保存
+            </button>
+          </div>
+        </div>
       </div>
     </div>
+
+    <input type="file" id="import-file-input" accept=".json,application/json" hidden />
 
     <script src="assets/js/config.js"></script>
     <script src="assets/js/app.js"></script>
