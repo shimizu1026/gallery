@@ -484,7 +484,19 @@
 
     input[type="text"],
     input[type="url"],
-    textarea,
+    textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-family: var(--font);
+      font-size: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 0.25rem;
+      background: var(--white);
+      color: var(--black);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
     select {
       width: 100%;
       padding: 0.75rem 2.5rem 0.75rem 1rem;
