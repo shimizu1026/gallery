@@ -155,9 +155,6 @@
               </button>
             </div>
 
-            <input type="file" id="file-input" accept="image/*" hidden />
-            <input type="file" id="edit-file-input" accept="image/*" hidden />
-
             <div class="add-form" id="add-form">
               <div class="preview-area" id="preview-area">
                 <div class="preview-choice">
@@ -183,7 +180,7 @@
                   <button
                     type="button"
                     class="preview-choice-btn"
-                    onclick="document.getElementById('file-input').click()"
+                    onclick="openImageFilePicker()"
                   >
                     <svg
                       width="28"
@@ -513,6 +510,7 @@
       </div>
     </div>
 
+    <input type="file" id="image-file-input" accept="image/*" hidden />
     <input type="file" id="import-file-input" accept=".json,application/json" hidden />
 
     <script src="assets/js/config.js"></script>

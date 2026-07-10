@@ -1011,12 +1011,12 @@ function renderEditPreview(item) {
       <div class="preview-image-wrap">
         <img src="${esc(item.image)}" alt="">
       </div>
-      ${previewChoiceHTML('edit')}
+      ${previewChoiceHTML()}
     `;
     return;
   }
 
-  el.innerHTML = previewChoiceHTML('edit');
+  el.innerHTML = previewChoiceHTML();
 }
 
 function renderEdit(id) {
@@ -1117,15 +1117,18 @@ function showUrlForm() {
   pendingImage = null;
 }
 
-function previewChoiceHTML(context = previewContext) {
-  const fileInputId = context === 'edit' ? 'edit-file-input' : 'file-input';
+function openImageFilePicker() {
+  document.getElementById('image-file-input')?.click();
+}
+
+function previewChoiceHTML() {
   return `<div class="preview-choice">
     <button type="button" class="preview-choice-btn" onclick="startCapture()">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
       <span>画面キャプチャ</span>
     </button>
     <div class="preview-choice-divider"></div>
-    <button type="button" class="preview-choice-btn" onclick="document.getElementById('${fileInputId}').click()">
+    <button type="button" class="preview-choice-btn" onclick="openImageFilePicker()">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <span>画像アップロード</span>
     </button>
@@ -1431,11 +1434,7 @@ async function saveItemAsync() {
   }
 }
 
-document.getElementById('file-input').addEventListener('change', e => {
-  handleImageFileSelect(e.target);
-});
-
-document.getElementById('edit-file-input')?.addEventListener('change', e => {
+document.getElementById('image-file-input')?.addEventListener('change', e => {
   handleImageFileSelect(e.target);
 });
 
