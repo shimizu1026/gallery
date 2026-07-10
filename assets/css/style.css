@@ -668,7 +668,7 @@
       margin-bottom: 2rem;
       align-self: center;
       width: 100%;
-      max-width: 40rem;
+      max-width: 52rem;
     }
     .view-header .subtitle { margin-bottom: 0; }
 
@@ -751,7 +751,7 @@
     .method-card h3 { font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem; }
     .method-card p { font-size: 1rem; color: var(--gray); }
 
-    .add-form { max-width: 40rem; width: 100%; align-self: center; }
+    .add-form { max-width: 52rem; width: 100%; align-self: center; }
 
     .add-form-actions {
       display: flex;
