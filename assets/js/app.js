@@ -936,38 +936,6 @@ function renderHome() {
 }
 
 /* ── Detail ── */
-function renderBlurredSectionHead(containerId, imageUrl, title) {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  if (!imageUrl) {
-    el.innerHTML = `<h2 class="blur-section-title">${esc(title)}</h2>`;
-    el.className = 'blur-section-head blur-section-head--plain';
-    return;
-  }
-  el.className = 'blur-section-head';
-  el.innerHTML = `
-    <div class="blur-section-head-bg" style="background-image:url(${JSON.stringify(imageUrl)})"></div>
-    <div class="blur-section-head-fade"></div>
-    <h2 class="blur-section-title">${esc(title)}</h2>
-  `;
-}
-
-function renderDetailHero(imageUrl, alt) {
-  const hero = document.getElementById('detail-hero');
-  if (!hero) return;
-  if (!imageUrl) {
-    hero.className = 'detail-hero';
-    hero.innerHTML = `<div style="padding:80px;text-align:center;color:#A4A4A4;width:100%">${placeholderSVG()}<p style="margin-top:16px">画像未登録</p></div>`;
-    return;
-  }
-  hero.className = 'detail-hero detail-hero--blur';
-  hero.innerHTML = `
-    <div class="detail-hero-bg" style="background-image:url(${JSON.stringify(imageUrl)})"></div>
-    <div class="detail-hero-fade"></div>
-    <img src="${esc(imageUrl)}" alt="${esc(alt)}" class="detail-hero-sharp">
-  `;
-}
-
 function openDetail(id) {
   currentId = id;
   navigate('detail');
@@ -985,7 +953,9 @@ function renderDetail(id) {
     [item.url ? normalizeSiteKey(item.url) : '', item.industry].filter(Boolean).join(' · ') || '未分類';
 
   const hero = document.getElementById('detail-hero');
-  renderDetailHero(heroItem.image, item.title);
+  hero.innerHTML = heroItem.image
+    ? `<img src="${heroItem.image}" alt="${item.title}">`
+    : `<div style="padding:80px;text-align:center;color:#A4A4A4">${placeholderSVG()}<p style="margin-top:16px">画像未登録</p></div>`;
 
   document.getElementById('detail-info').innerHTML = `
     ${item.url ? `<p>URL: <a href="${esc(item.url)}" target="_blank" rel="noopener">${esc(item.url)}</a></p>` : ''}
@@ -997,36 +967,23 @@ function renderDetail(id) {
     <p>登録日: ${new Date(item.createdAt).toLocaleDateString('ja-JP')}</p>`;
 
   const sectionsTitle = document.getElementById('detail-sections-title');
-  const groupHead = document.getElementById('detail-group-head');
   const secEl = document.getElementById('detail-sections');
   if (siteItems.length > 1) {
-    if (groupHead) {
-      groupHead.hidden = false;
-      renderBlurredSectionHead('detail-group-head', heroItem.image, 'グループ各社');
-    }
-    if (sectionsTitle) sectionsTitle.hidden = true;
+    if (sectionsTitle) sectionsTitle.textContent = '同一サイトの参考';
     secEl.innerHTML = siteItems.map(si => `
       <div class="section-item${si.id === item.id ? ' is-current' : ''}" onclick="openDetail('${si.id}')">
         ${si.image ? `<img src="${si.image}" alt="${esc(si.section || si.title)}">` : `<div style="aspect-ratio:16/10;background:#F3F3F3;display:flex;align-items:center;justify-content:center">${placeholderSVG()}</div>`}
         <p class="section-label">${esc(si.section || '未分類')}</p>
       </div>`).join('');
   } else if (item.sections && item.sections.length > 0) {
-    if (groupHead) groupHead.hidden = true;
-    if (sectionsTitle) {
-      sectionsTitle.hidden = false;
-      sectionsTitle.textContent = 'セクション';
-    }
+    if (sectionsTitle) sectionsTitle.textContent = 'セクション';
     secEl.innerHTML = item.sections.map(s => `
       <div class="section-item">
         ${s.image ? `<img src="${s.image}" alt="${s.name}">` : `<div style="aspect-ratio:16/10;background:#F3F3F3;display:flex;align-items:center;justify-content:center">${placeholderSVG()}</div>`}
         <p class="section-label">${esc(s.name)}</p>
       </div>`).join('');
   } else {
-    if (groupHead) groupHead.hidden = true;
-    if (sectionsTitle) {
-      sectionsTitle.hidden = false;
-      sectionsTitle.textContent = 'セクション';
-    }
+    if (sectionsTitle) sectionsTitle.textContent = 'セクション';
     secEl.innerHTML = `<p style="color:#A4A4A4;font-size:16px">セクション分割は未登録です</p>`;
   }
 
