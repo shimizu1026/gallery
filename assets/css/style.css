@@ -429,12 +429,11 @@
     .view.active {
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: stretch;
       width: 100%;
     }
     .view.active > :not([hidden]) {
       width: 100%;
-      max-width: 64rem;
     }
 
     /* ── Typography ── */
@@ -553,7 +552,7 @@
 
     .card-thumb .placeholder-svg { width: 3rem; height: 3rem; opacity: 0.4; }
 
-    .card-body { padding: 1rem; }
+    .card-body { padding: 1.25rem; }
 
     .card-title-row {
       display: flex;
@@ -565,7 +564,7 @@
     .card-title {
       flex: 1;
       min-width: 0;
-      font-size: 1rem;
+      font-size: 1.125rem;
       font-weight: 500;
       margin-bottom: 0;
       white-space: nowrap;
@@ -667,6 +666,9 @@
       gap: 1rem;
       flex-wrap: wrap;
       margin-bottom: 2rem;
+      align-self: center;
+      width: 100%;
+      max-width: 40rem;
     }
     .view-header .subtitle { margin-bottom: 0; }
 
@@ -749,7 +751,7 @@
     .method-card h3 { font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem; }
     .method-card p { font-size: 1rem; color: var(--gray); }
 
-    .add-form { max-width: 40rem; width: 100%; }
+    .add-form { max-width: 40rem; width: 100%; align-self: center; }
 
     .add-form-actions {
       display: flex;
