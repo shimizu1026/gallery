@@ -60,8 +60,9 @@ function renderFontRow(font) {
     <article class="font-row" data-font-id="${escHtml(font.id)}">
       <div class="font-row-header">
         <span class="font-row-name">${escHtml(font.name)}</span>
-        <span class="font-row-meta">2 styles<span class="font-row-sep">|</span>${escHtml(font.description)}</span>
+        <span class="font-row-meta">2 styles</span>
       </div>
+      <p class="font-row-desc">${escHtml(font.description)}</p>
       <p class="font-row-preview${jaClass}" style="font-family:'${escHtml(font.family)}',${fallback}">${escHtml(preview)}</p>
     </article>
   `;
