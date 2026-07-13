@@ -47,7 +47,7 @@ const FONTS_BY_TYPE = {
   'グーグルフォント': [
     'Noto Sans JP', 'Noto Serif JP', 'Roboto', 'Inter', 'Open Sans', 'Lato',
     'Montserrat', 'Poppins', 'Playfair Display', 'Oswald', 'Raleway',
-    'M PLUS 1p', 'Zen Kaku Gothic New', 'Shippori Mincho', 'Zen Old Mincho', 'Source Sans 3','Cormorant Garamond'
+    'M PLUS 1p', 'Zen Kaku Gothic New', 'Shippori Mincho', 'Zen Old Mincho', 'Source Sans 3','Cormorant Garamond','Unbounded'
   ],
   'アドビフォント': [
     'Source Han Sans', 'Source Han Serif', 'Acumin Pro', 'Minion Pro',
