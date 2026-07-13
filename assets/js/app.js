@@ -550,9 +550,20 @@ function categoryBtn(cat, isChild = false) {
   const active = cat === activeCategory ? ' active' : '';
   const childClass = isChild ? ' is-child' : '';
   return `<button type="button" class="nav-btn category-btn${active}${childClass}"
-    data-category="${esc(cat)}" onclick="selectCategory(${JSON.stringify(cat)})">
+    data-category="${esc(cat)}">
     <span class="label">${esc(cat)}</span>
   </button>`;
+}
+
+function bindCategoryNav() {
+  const nav = document.getElementById('category-nav');
+  if (!nav || nav.dataset.bound) return;
+  nav.dataset.bound = '1';
+  nav.addEventListener('click', (e) => {
+    const btn = e.target.closest('.category-btn');
+    if (!btn?.dataset.category) return;
+    selectCategory(btn.dataset.category);
+  });
 }
 
 function renderCategoryNav() {
@@ -622,6 +633,14 @@ function navigate(view) {
     const switchView = () => {
       prev.classList.remove('active');
       next.classList.add('active');
+      if (typeof gsap !== 'undefined') {
+        gsap.set([prev, next], { clearProps: 'opacity,y' });
+      } else {
+        prev.style.opacity = '';
+        prev.style.transform = '';
+        next.style.opacity = '';
+        next.style.transform = '';
+      }
       onViewEnter(view);
     };
 
@@ -634,8 +653,10 @@ function navigate(view) {
       }});
     }
   } else if (next) {
+    document.querySelectorAll('.view.active').forEach(v => v.classList.remove('active'));
     next.classList.add('active');
     if (typeof gsap !== 'undefined') {
+      gsap.set('.view', { clearProps: 'opacity,y' });
       gsap.fromTo(next, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' });
     }
     onViewEnter(view);
@@ -1862,6 +1883,7 @@ function initHeaderScroll() {
 
 async function initApp() {
   runIntroAnimation();
+  bindCategoryNav();
   renderCategoryNav();
   initFormSelects();
   initAddFormAutoTitle();
