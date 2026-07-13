@@ -52,27 +52,17 @@ function getFilteredFonts() {
   return getFontsCatalog().filter(f => f.language === fontsPageState.language);
 }
 
-function groupFontsByCategory(fonts) {
-  const map = new Map();
-  fonts.forEach(font => {
-    const cat = font.category || 'その他';
-    if (!map.has(cat)) map.set(cat, []);
-    map.get(cat).push(font);
-  });
-  return map;
-}
-
-function renderFontCard(font) {
+function renderFontRow(font) {
   const preview = PREVIEW_TEXT[font.language] || PREVIEW_TEXT.latin;
   const fallback = font.language === 'ja' ? 'sans-serif' : 'serif';
+  const jaClass = font.language === 'ja' ? ' is-ja' : '';
   return `
-    <article class="font-card" data-font-id="${escHtml(font.id)}">
-      <div class="font-card-meta">
-        <span class="font-card-category">${escHtml(font.category)}</span>
-        <h3 class="font-card-name">${escHtml(font.name)}</h3>
-        <p class="font-card-desc">${escHtml(font.description)}</p>
+    <article class="font-row" data-font-id="${escHtml(font.id)}">
+      <div class="font-row-header">
+        <span class="font-row-name">${escHtml(font.name)}</span>
+        <span class="font-row-meta">2 styles<span class="font-row-sep">|</span>${escHtml(font.description)}</span>
       </div>
-      <p class="font-card-preview" style="font-family:'${escHtml(font.family)}',${fallback}">${escHtml(preview)}</p>
+      <p class="font-row-preview${jaClass}" style="font-family:'${escHtml(font.family)}',${fallback}">${escHtml(preview)}</p>
     </article>
   `;
 }
@@ -94,15 +84,7 @@ function renderFontsPage() {
     return;
   }
 
-  const grouped = groupFontsByCategory(fonts);
-  let html = '';
-  grouped.forEach((items, category) => {
-    html += `<section class="fonts-category-group">
-      <h3 class="fonts-category-title">${escHtml(category)}</h3>
-      <div class="fonts-category-grid">${items.map(renderFontCard).join('')}</div>
-    </section>`;
-  });
-  grid.innerHTML = html;
+  grid.innerHTML = `<div class="fonts-list">${fonts.map(renderFontRow).join('')}</div>`;
 }
 
 function updateToggleUI() {
