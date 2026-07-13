@@ -13,6 +13,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="assets/css/style.css" />
+    <link rel="stylesheet" href="assets/css/fonts-page.css" />
   </head>
   <body>
     <div class="app">
@@ -137,6 +138,46 @@
           <section class="view active" id="view-home">
             <p class="count" id="home-count"></p>
             <div class="gallery-grid" id="home-grid"></div>
+          </section>
+
+          <!-- FONTS -->
+          <section class="view" id="view-fonts">
+            <div class="fonts-page" id="fonts-page" data-weight="400" data-language="ja">
+              <div class="fonts-page-header">
+                <div>
+                  <h2>Google Fonts</h2>
+                  <p class="subtitle">フォント一覧・プレビュー</p>
+                </div>
+                <div class="fonts-controls">
+                  <div class="fonts-control">
+                    <span class="fonts-control-label">ウェイト</span>
+                    <div class="fonts-toggle-labels">
+                      <span class="is-active" data-fonts-weight-label="400">レギュラー（400）</span>
+                      <label class="fonts-toggle">
+                        <input type="checkbox" id="fonts-weight-toggle" role="switch" aria-label="ウェイトをボールドに切り替え" />
+                        <span class="fonts-toggle-track"></span>
+                        <span class="fonts-toggle-thumb"></span>
+                      </label>
+                      <span data-fonts-weight-label="700">ボールド（700）</span>
+                    </div>
+                  </div>
+                  <div class="fonts-control">
+                    <span class="fonts-control-label">言語</span>
+                    <div class="fonts-toggle-labels">
+                      <span class="is-active" data-fonts-lang-label="ja">日本語</span>
+                      <label class="fonts-toggle">
+                        <input type="checkbox" id="fonts-lang-toggle" role="switch" aria-label="言語を欧文に切り替え" />
+                        <span class="fonts-toggle-track"></span>
+                        <span class="fonts-toggle-thumb"></span>
+                      </label>
+                      <span data-fonts-lang-label="latin">欧文</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p class="fonts-count" id="fonts-count"></p>
+              <div class="fonts-grid" id="fonts-grid"></div>
+            </div>
           </section>
 
           <!-- ADD -->
@@ -514,6 +555,8 @@
     <input type="file" id="import-file-input" accept=".json,application/json" hidden />
 
     <script src="assets/js/config.js"></script>
+    <script src="assets/js/fonts-data.js"></script>
+    <script src="assets/js/fonts-page.js"></script>
     <script src="assets/js/app.js"></script>
   </body>
 </html>

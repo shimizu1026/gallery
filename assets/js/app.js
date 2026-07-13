@@ -19,6 +19,7 @@ const BUILTIN_CATEGORY_TREE = [
     group: 'パーツ',
     items: ['カード・リスト', 'モーダル・ポップアップ', 'メガメニュー', 'スライダー']
   },
+  { group: 'フォント', items: [] },
 ];
 const INDUSTRIES = [
   'IT・SaaS', 'EC・小売', '金融', '不動産', '医療・健康', '教育', 'メディア', '飲食',
@@ -44,18 +45,23 @@ const MOTION_TYPES = [
 ];
 const FONT_TYPES = ['グーグルフォント', 'アドビフォント', 'フリーフォント', 'ゴシック', '明朝', 'その他'];
 const FONTS_BY_TYPE = {
-  'グーグルフォント': [
+'グーグルフォント': [
     'Noto Sans JP', 'Noto Serif JP', 'Roboto', 'Inter', 'Open Sans', 'Lato',
     'Montserrat', 'Poppins', 'Playfair Display', 'Oswald', 'Raleway',
-    'M PLUS 1p', 'Zen Kaku Gothic New', 'Shippori Mincho', 'Zen Old Mincho', 'Source Sans 3','Cormorant Garamond','Unbounded'
+    'M PLUS 1p', 'Zen Kaku Gothic New', 'Shippori Mincho', 'Zen Old Mincho', 'Source Sans 3', 'Cormorant Garamond', 'Unbounded', 'Outfit', 'Figtree', 'Nunito', 'DM Serif Display', 'BIZ UDPGothic', 'Dela Gothic One', 'YakuHanJP',
+    'M PLUS Rounded 1c', 'Klee One', 'Plus Jakarta Sans', 'DM Sans', 'Work Sans', 'Manrope', 'Cinzel', 'Lora', 'Merriweather', 'Libre Baskerville', 'Bebas Neue'
   ],
-  'アドビフォント': [
+'アドビフォント': [
     'Source Han Sans', 'Source Han Serif', 'Acumin Pro', 'Minion Pro',
-    'Myriad Pro', 'Kozuka Gothic Pro', 'Kozuka Mincho Pro', 'Adobe Garamond Pro', 'Helvetica'
+    'Myriad Pro', 'Kozuka Gothic Pro', 'Kozuka Mincho Pro', 'Adobe Garamond Pro', 'Helvetica',
+    'A-OTF Shin Go Pro', 'A-OTF Ryumin Pro', 'Tazugane Gothic', 'TsukuARoundGothic Regular', 'FOT-TsukuMinPr6N', 
+    'Kazuranishiki', 'Glow Sans JP', 'Futura PT', 'Garamond Premier Pro', 'Proxima Nova', 'CCKuromane'
   ],
-  'フリーフォント': [
-    'BIZ UDPGothic', 'BIZ UDPMincho', '源ノ角ゴシック', '源ノ明朝',
-    '游ゴシック', '游明朝', 'Helvetica Neue', 'Arial'
+'フリーフォント': [
+     'BIZ UDPMincho', '源ノ角ゴシック', '源ノ明朝',
+    '游ゴシック', '游明朝', 'Helvetica Neue', 'Arial',
+    'Hiragino Kaku Gothic ProN', 'Hiragino Mincho ProN', 'SF Pro', 'San Francisco', 'Segoe UI', 'Meiryo',
+    'LINE Seed JP', 'YakuHanJP_Noto', 'Corporate Logo', 'Boku2-Bold', 'Sawarabi Gothic'
   ],
   'ゴシック': [
     'Noto Sans JP', 'Roboto', 'Inter', 'Open Sans', 'Lato', 'Montserrat', 'Poppins',
@@ -583,6 +589,10 @@ function goHome() {
 function selectCategory(cat) {
   activeCategory = cat;
   renderCategoryNav();
+  if (cat === 'フォント') {
+    navigate('fonts');
+    return;
+  }
   if (document.getElementById('view-home').classList.contains('active')) {
     applyHomeFilter();
   } else {
@@ -602,7 +612,10 @@ function navigate(view) {
     b.classList.toggle('active', b.dataset.view === view);
   });
   document.querySelectorAll('.category-btn').forEach(b => {
-    b.classList.toggle('active', view === 'home' && b.dataset.category === activeCategory);
+    b.classList.toggle('active',
+      (view === 'home' && b.dataset.category === activeCategory)
+      || (view === 'fonts' && b.dataset.category === 'フォント')
+    );
   });
 
   if (prev && next && prev !== next) {
@@ -636,6 +649,7 @@ function onViewEnter(view) {
     if (!addFormDraft) fillSectionPicker('add-section', getDefaultSectionForAdd());
   }
   if (view === 'home') renderHome();
+  if (view === 'fonts' && typeof initFontsPage === 'function') initFontsPage();
   if (view === 'detail' && currentId) renderDetail(currentId);
   if (view === 'edit' && currentId) renderEdit(currentId);
 }
